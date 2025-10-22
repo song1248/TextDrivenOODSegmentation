@@ -103,6 +103,67 @@ def single_gpu_test(model,
             prog_bar.update()
     return results
 
+# original
+# def multi_gpu_test(model,
+#                    data_loader,
+#                    tmpdir=None,
+#                    gpu_collect=False,
+#                    efficient_test=False):
+#     """Test model with multiple gpus.
+
+#     This method tests model with multiple gpus and collects the results
+#     under two different modes: gpu and cpu modes. By setting 'gpu_collect=True'
+#     it encodes results to gpu tensors and use gpu communication for results
+#     collection. On cpu mode it saves the results on different gpus to 'tmpdir'
+#     and collects them by the rank 0 worker.
+
+#     Args:
+#         model (nn.Module): Model to be tested.
+#         data_loader (utils.data.Dataloader): Pytorch data loader.
+#         tmpdir (str): Path of directory to save the temporary results from
+#             different gpus under cpu mode. The same path is used for efficient
+#             test.
+#         gpu_collect (bool): Option to use either gpu or cpu to collect results.
+#         efficient_test (bool): Whether save the results as local numpy files to
+#             save CPU memory during evaluation. Default: False.
+
+#     Returns:
+#         list: The prediction results.
+#     """
+
+#     model.eval()
+#     results = []
+#     dataset = data_loader.dataset
+#     rank, world_size = get_dist_info()
+#     if rank == 0:
+#         prog_bar = mmcv.ProgressBar(len(dataset))
+#     if efficient_test:
+#         mmcv.mkdir_or_exist('./efficient_test')
+#     for i, data in enumerate(data_loader):
+
+#         with torch.no_grad():
+#             result,result_logit = model(return_loss=False, rescale=True, **data)
+        
+#         if isinstance(result, list):
+#             if efficient_test:
+#                 result = [np2tmp(_, tmpdir='./efficient_test/') for _ in result]
+#             results.extend(result)
+#         else:
+#             if efficient_test:
+#                 result = np2tmp(result, tmpdir='./efficient_test/')
+#             results.append(result)
+
+#         if rank == 0:
+#             batch_size = len(result)
+#             for _ in range(batch_size * world_size):
+#                 prog_bar.update()
+
+#     # collect results from all ranks
+#     if gpu_collect:
+#         results = collect_results_gpu(results, len(dataset))
+#     else:
+#         results = collect_results_cpu(results, len(dataset), tmpdir)
+#     return results
 
 def multi_gpu_test(model,
                    data_loader,
@@ -128,11 +189,12 @@ def multi_gpu_test(model,
             save CPU memory during evaluation. Default: False.
 
     Returns:
-        list: The prediction results.
+        tuple: A tuple of lists containing prediction results and logits.
     """
 
     model.eval()
     results = []
+    results_logits = []
     dataset = data_loader.dataset
     rank, world_size = get_dist_info()
     if rank == 0:
@@ -142,25 +204,34 @@ def multi_gpu_test(model,
     for i, data in enumerate(data_loader):
 
         with torch.no_grad():
-            result = model(return_loss=False, rescale=True, **data)
+            result, result_logit = model(return_loss=False, rescale=True, **data)
 
         if isinstance(result, list):
             if efficient_test:
                 result = [np2tmp(_, tmpdir='./efficient_test/') for _ in result]
+                result_logit = [np2tmp(_, tmpdir='./efficient_test/') for _ in result_logit]
             results.extend(result)
+            results_logits.extend(result_logit)
         else:
             if efficient_test:
                 result = np2tmp(result, tmpdir='./efficient_test/')
+                result_logit = np2tmp(result_logit, tmpdir='./efficient_test/')
             results.append(result)
+            results_logits.append(result_logit)
 
         if rank == 0:
             batch_size = len(result)
             for _ in range(batch_size * world_size):
                 prog_bar.update()
 
+    
     # collect results from all ranks
     if gpu_collect:
         results = collect_results_gpu(results, len(dataset))
+        results_logits = collect_results_gpu(results_logits, len(dataset))
     else:
         results = collect_results_cpu(results, len(dataset), tmpdir)
-    return results
+        results_logits = collect_results_cpu(results_logits, len(dataset), tmpdir)
+    
+    
+    return results, results_logits

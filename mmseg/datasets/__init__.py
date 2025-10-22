@@ -10,6 +10,12 @@ from .uda_dataset import UDADataset
 from .ug_dataset import UGDataset
 from .ade import ADE20KDataset
 
+# from .ood_fishyscapes import FishyscapesDataset
+# from .ood_road_anomaly import RoadAnomalyDataset
+from .ood_segment_me_AT import SegmentMeATDataset
+# from .ood_segment_me_OT import SegmentMeODDataset
+
+
 __all__ = [
     'ADE20KDataset',
     'CustomDataset',
@@ -26,4 +32,9 @@ __all__ = [
     'MapillaryDataset',
     'UDADataset',
     'UGDataset',
+    'SegmentMeATDataset',
+    # 'SegmentMeODDataset',
+    # 'FishyscapesDataset',
+    # 'RoadAnomalyDataset',
+    
 ]

@@ -41,6 +41,14 @@ def cross_entropy(pred,
 
     # class_weight is a manual rescaling weight given to each class.
     # If given, has to be a Tensor of size C element-wise losses
+    # print("pred", pred)
+    # print("label", label)
+    # print("pred.shape", pred.shape)
+    # print("label.shape", label.shape)
+    # # 유니크 값 찾기
+    # unique_values = torch.unique(label)
+    # print("Unique values in label:", unique_values)
+    
     loss = F.cross_entropy(
         pred,
         label,

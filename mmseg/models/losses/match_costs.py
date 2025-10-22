@@ -231,3 +231,69 @@ class CrossEntropyLossCost:
             raise NotImplementedError
 
         return cls_cost * self.weight
+
+
+@MATCH_COST.register_module()
+class MaskFocalCost:
+    """
+    Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
+    Args:
+        inputs: A float tensor of arbitrary shape.
+                The predictions for each example.
+        targets: A float tensor with the same shape as inputs. Stores the binary
+                 classification label for each element in inputs
+                (0 for the negative class and 1 for the positive class).
+        alpha: (optional) Weighting factor in range (0,1) to balance
+                positive vs negative examples. Default = -1 (no weighting).
+        gamma: Exponent of the modulating factor (1 - p_t) to
+               balance easy vs hard examples.
+        ignore_class: Use to weight 0 for ignore classes.
+    Returns:
+        Loss tensor
+    """
+
+    def __init__(self, weight=1., alpha=0.25, gamma=2):
+        self.weight = weight
+        self.alpha = alpha
+        self.gamma = gamma
+
+    def _batch_sigmoid_focal_loss(self, inputs, targets):
+        """
+        Args:
+            inputs (Tensor): Mask prediction in shape (num_query, *).
+            targets (Tensor): Ground truth in shape (num_gt, *)
+                store 0 or 1, 0 for negative class and 1 for
+                positive class.
+
+        Returns:
+            Tensor: Dice cost matrix in shape (num_query, num_gt).
+        """
+        hwz = inputs.shape[1]
+
+        prob = inputs.sigmoid()
+        focal_pos = ((1 - prob) ** self.gamma) * F.binary_cross_entropy_with_logits(
+            inputs, torch.ones_like(inputs), reduction="none"
+        )
+        focal_neg = (prob ** self.gamma) * F.binary_cross_entropy_with_logits(
+            inputs, torch.zeros_like(inputs), reduction="none"
+        )
+        if self.alpha >= 0:
+            focal_pos = focal_pos * self.alpha
+            focal_neg = focal_neg * (1 - self.alpha)
+        loss = torch.einsum("nc,mc->nm", focal_pos, targets) + torch.einsum(
+            "nc,mc->nm", focal_neg, (1 - targets)
+        )
+
+        return loss / hwz
+
+    def __call__(self, mask_preds, gt_masks):
+        """
+        Args:
+            mask_preds (Tensor): Mask prediction logits in shape (num_query, *)
+            gt_masks (Tensor): Ground truth in shape (num_gt, *)
+
+        Returns:
+            Tensor: Dice cost matrix with weight in shape (num_query, num_gt).
+        """
+        focal_cost = self._batch_sigmoid_focal_loss(mask_preds, gt_masks)
+        return focal_cost * self.weight

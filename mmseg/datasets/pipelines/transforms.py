@@ -7,6 +7,11 @@ from numpy import random
 
 from ..builder import PIPELINES
 
+import torchvision
+
+from torchvision import transforms
+from PIL import Image
+
 
 @PIPELINES.register_module()
 class Resize(object):
@@ -891,3 +896,6 @@ class PhotoMetricDistortion(object):
                      f'{self.saturation_upper}), '
                      f'hue_delta={self.hue_delta})')
         return repr_str
+
+
+

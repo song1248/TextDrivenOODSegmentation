@@ -165,14 +165,10 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: b
                 raise RuntimeError(f"Input {texts[i]} is too long for context length {context_length}")
         result[i, :len(tokens)] = torch.tensor(tokens)
 
-    # print(result.shape)
-    # exit()
-
     return result
 
 def get_text_embeddings(texts, text_encoder): # list of texts
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # texts = add_synonym(texts)
     text_tokens = torch.cat([tokenize(
                             texts = f"a clean origami of a {text}",
                             context_length = text_encoder.context_length) # = 13
@@ -180,7 +176,7 @@ def get_text_embeddings(texts, text_encoder): # list of texts
 
     # (T, C), where T= # of templetes, C=512
     text_embeddings = text_encoder(text_tokens)
-    return text_embeddings  
+    return text_embeddings
 
 def add_synonym(texts):
     for i, text in enumerate(texts):

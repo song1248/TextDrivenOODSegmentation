@@ -12,6 +12,8 @@ from mmseg.ops import resize
 from ..builder import build_loss
 from ..losses import accuracy
 
+import torch.nn.functional as F
+
 
 class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
     """Base class for BaseDecodeHead.
@@ -190,7 +192,18 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
             dict[str, Tensor]: a dictionary of loss components
         """
         seg_logits = self.forward(inputs)
+        # print("seg_logits",seg_logits)
+        # print("gt_semantic_seg",gt_semantic_seg)
+        # print("seg_weight",seg_weight)
+        # print("seg_logits.shape",seg_logits.shape)
+        # print("gt_semantic_seg.shape",gt_semantic_seg.shape)
+        # print("seg_weight.shape",seg_weight.shape)
+        # if seg_logits.shape[1] > self.num_classes: 
+        #     losses = self.custom_losses(seg_logits, gt_semantic_seg, seg_weight)
+        # else:
+        #     losses = self.losses(seg_logits, gt_semantic_seg, seg_weight)
         losses = self.losses(seg_logits, gt_semantic_seg, seg_weight)
+        
         return losses
 
     def forward_test(self, inputs, img_metas, test_cfg):
@@ -230,6 +243,14 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
         if self.sampler is not None:
             seg_weight = self.sampler.sample(seg_logit, seg_label)
         seg_label = seg_label.squeeze(1)
+
+        # print("seg_logit",seg_logit)
+        # print("seg_label",seg_label)
+        # print("seg_logit.shape",seg_logit.shape)
+        # print("seg_label.shape",seg_label.shape)
+        # print("seg_weight",seg_weight)
+        # print("self.ignore_index",self.ignore_index)
+        
         loss['loss_seg'] = self.loss_decode(
             seg_logit,
             seg_label,
@@ -237,3 +258,52 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
             ignore_index=self.ignore_index)
         loss['acc_seg'] = accuracy(seg_logit, seg_label)
         return loss
+                
+    # @force_fp32(apply_to=('seg_logit', ))
+    # def custom_losses(self, seg_logit, seg_label, seg_weight=None):
+    #     """Compute segmentation loss with support for additional M classes."""
+    #     loss = dict()
+    
+    #     # Resize seg_logit to match seg_label size
+    #     seg_logit = resize(
+    #         input=seg_logit,
+    #         size=seg_label.shape[2:],
+    #         mode='bilinear',
+    #         align_corners=self.align_corners
+    #     )
+    
+    #     if self.sampler is not None:
+    #         seg_weight = self.sampler.sample(seg_logit, seg_label)
+    
+    #     # Original seg_label shape: [batch_size, 1, patch_w, patch_h]
+    #     # Expand seg_label to match the new class count (N+M)
+    #     batch_size, _, patch_w, patch_h = seg_label.shape
+    #     seg_label = seg_label.squeeze(1)  # Shape: [batch_size, patch_w, patch_h]
+    
+    #     # Create a multi-label seg_label for N+M classes
+    #     # Initialize a zero tensor for the new seg_label
+    #     new_seg_label = torch.zeros(
+    #         (batch_size, seg_logit.shape[1], patch_w, patch_h),
+    #         dtype=torch.float32,
+    #         device=seg_label.device
+    #     )
+    
+    #     # Assign the original labels (one-hot encoding for first N classes)
+    #     for cls in range(self.num_classes):  # self.num_classes is N
+    #         new_seg_label[:, cls, :, :] = (seg_label == cls).float()
+    
+    #     # Assign the additional M classes to the N-th class ground truth
+    #     # N-th class corresponds to self.num_classes - 1 (0-indexed)
+    #     for cls in range(self.num_classes, seg_logit.shape[1]):
+    #         new_seg_label[:, cls, :, :] = (seg_label == (self.num_classes - 1)).float()
+    
+    #     # Use BCEWithLogitsLoss for multi-label loss computation
+    #     bce_loss = nn.BCEWithLogitsLoss(weight=seg_weight, reduction='mean')
+    #     loss['loss_seg'] = bce_loss(seg_logit, new_seg_label)
+    
+    #     # Compute accuracy for the original N classes (ignoring additional M classes)
+    #     seg_logit_original = seg_logit[:, :self.num_classes, :, :]
+    #     seg_label_original = seg_label
+    #     loss['acc_seg'] = accuracy(seg_logit_original, seg_label_original)
+    
+    #     return loss

@@ -51,6 +51,7 @@ class UGDataset(object):
 
             self.rcs_classes, self.rcs_classprob = get_rcs_class_probs(
                 cfg['source']['data_root'], self.rcs_class_temp)
+            
             mmcv.print_log(f'RCS Classes: {self.rcs_classes}', 'mmseg')
             mmcv.print_log(f'RCS ClassProb: {self.rcs_classprob}', 'mmseg')
 
@@ -77,6 +78,34 @@ class UGDataset(object):
                     file = file.split('/')[-1]
                 self.file_to_idx[file] = i
 
+        # #$#$#$#$#$
+        # print("self.source:", self.source)
+        
+        # #$#$#$#$#$
+        # print("cfg['source']",cfg['source'])
+        # print("Source Dataset:", type(self.source))
+        # print("Source Dataset Length:", len(self.source))
+        # print("Source img_infos:", len(self.source.img_infos))
+        # print("First Source Info:", self.source.img_infos[0] if self.source.img_infos else "Empty")
+    
+        # #$#$#$#$#$
+        # import os
+        # data_root = cfg['source']['data_root']
+        # img_dir = os.path.join(data_root, cfg['source']['img_dir'])
+        # ann_dir = os.path.join(data_root, cfg['source']['ann_dir'])
+
+        # print("img_dir : ", img_dir)
+        # print("ann_dir : ", ann_dir)
+        # print(f"Image Directory Exists: {os.path.exists(img_dir)}")
+        # print(f"Annotation Directory Exists: {os.path.exists(ann_dir)}")
+        
+        # if os.path.exists(img_dir):
+        #     print(f"Number of Images: {len(os.listdir(img_dir))}")
+        # if os.path.exists(ann_dir):
+        #     print(f"Number of Annotations: {len(os.listdir(ann_dir))}")
+        # assert False
+        
+    
     def get_rare_class_sample(self):
         c = np.random.choice(self.rcs_classes, p=self.rcs_classprob)
         f1 = np.random.choice(self.samples_with_class[c])

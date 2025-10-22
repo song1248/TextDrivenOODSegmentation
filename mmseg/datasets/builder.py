@@ -67,6 +67,9 @@ def build_dataset(cfg, default_args=None):
     """Build datasets."""
     from .dataset_wrappers import ConcatDataset, RepeatDataset
     from mmseg.datasets import UDADataset, UGDataset
+
+    print("cfg['type']" ,cfg['type'])
+
     if cfg['type'] == 'UDADataset':
         dataset = UDADataset(
             source=build_dataset(cfg['source'], default_args),

@@ -141,6 +141,7 @@ def main():
 
     # build dataset
     datasets = [build_dataset(cfg.data.train)]
+
     cfg.model.class_names = list(datasets[0].CLASSES)
 
     # build model

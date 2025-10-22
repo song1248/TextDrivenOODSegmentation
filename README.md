@@ -1,85 +1,117 @@
-# [ECCV 2024] Textual Query-Driven Mask Transformer for Domain Generalized Segmentation
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/textual-query-driven-mask-transformer-for/domain-generalization-on-gta5-to-cityscapes)](https://paperswithcode.com/sota/domain-generalization-on-gta5-to-cityscapes?p=textual-query-driven-mask-transformer-for) <br />
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/textual-query-driven-mask-transformer-for/domain-generalization-on-gta-to-avg)](https://paperswithcode.com/sota/domain-generalization-on-gta-to-avg?p=textual-query-driven-mask-transformer-for) <br />
-### [**Textual Query-Driven Mask Transformer for Domain Generalized Segmentation**](https://arxiv.org/abs/2407.09033)
->[Byeonghyun Pak](https://byeonghyunpak.github.io/)\*, [Byeongju Woo](https://byeongjuwoo.github.io/)\*, [Sunghwan Kim](https://sunghwan.me/)\*, [Dae-hwan Kim](https://scholar.google.com/citations?hl=en&user=_5Scn8YAAAAJ), [Hoseong Kim](https://scholar.google.com/citations?hl=en&user=Zy7Sz5UAAAAJ)†\
->Agency for Defense Development\
->ECCV 2024
+# TDOS: Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation
 
-#### [[`Project Page`](https://byeonghyunpak.github.io/tqdm/)] [[`Paper`](https://arxiv.org/abs/2407.09033)]
+This repository accompanies the project **“Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation”**, which introduces a text-aware framework for out-of-distribution (OOD) semantic segmentation in autonomous driving scenarios. The codebase extends the [MMSegmentation](https://github.com/open-mmlab/mmsegmentation) ecosystem with CLIP-based visual and textual reasoning to detect unseen road anomalies more reliably.
 
-## Environment
-### Requirements
-- The requirements can be installed with:
-  
-  ```bash
-  conda create -n tqdm python=3.9 numpy=1.26.4
-  conda activate tqdm
-  conda install pytorch==2.0.1 torchvision==0.15.2 pytorch-cuda=11.8 -c pytorch -c nvidia
-  pip install -r requirements.txt
-  pip install xformers==0.0.20
-  pip install mmcv-full==1.5.3 
-  ```
-### Pre-trained VLM Models
-- Please download the pre-trained CLIP and EVA02-CLIP and save them in `./pretrained` folder.
+## Overview
 
-  | Model | Type | Link |
-  |-----|-----|:-----:|
-  | CLIP | `ViT-B-16.pt` |[official repo](https://github.com/openai/CLIP/blob/a1d071733d7111c9c014f024669f959182114e33/clip/clip.py#L30)|
-  | EVA02-CLIP | `EVA02_CLIP_L_336_psz14_s6B` |[official repo](https://github.com/baaivision/EVA/tree/master/EVA-CLIP#eva-02-clip-series)|
+- **Text-Driven OOD Segmentation** – Couples a CLIP vision transformer or ResNet backbone with a CLIP text encoder and a Mask2Former-style decoder to align visual features with flexible textual prompts.
+- **Distance-Based OOD Prompts** – Generates prompts at varying semantic distances (WordNet-driven in the paper) from in-distribution (ID) classes to carve out clearer ID/OOD decision boundaries.
+- **OOD Semantic Augmentation** – Uses self-attention feature perturbations to synthesize diverse OOD prototypes without inserting external objects.
+- **Vision/Text Regularization** – Freezes pretrained vision-language experts while learning prompt parameters and decoder heads; includes auxiliary identity head for stability.
+- **State-of-the-art OOD Segmentation** – Demonstrated on Fishyscapes, Segment-Me-If-You-Can, and Road Anomaly benchmarks, outperforming pixel- and object-level baselines.
 
-### Checkpoints
-- You can download **tqdm** model checkpoints:
 
-  | Model | Pretrained | Trained on | Config | Link |
-  |-----|-----|-----|-----|:-----:|
-  | `tqdm-clip-vit-b-gta` | CLIP | GTA5 | [config](https://github.com/ByeongHyunPak/tqdm/blob/main/configs/tqdm/tqdm_clip_vit-l_1e-5_20k-g2c-512.py) |[download link](https://drive.google.com/file/d/1oKTIuPoXTJyOqqof1yqtb10m41nVkreM/view?usp=drive_link)|
-  | `tqdm-eva02-clip-vit-l-gta` | EVA02-CLIP | GTA5 | [config](https://github.com/ByeongHyunPak/tqdm/blob/main/configs/tqdm/tqdm_eva_vit-l_1e-5_20k-g2c-512.py) |[download link](https://drive.google.com/file/d/1niKdUcoeP9Gd4F2O0LikTHBg39xHO8j0/view?usp=drive_link)|
-  | `tqdm-eva02-clip-vit-l-city` | EVA02-CLIP | Cityscapes | [config](https://github.com/ByeongHyunPak/tqdm/blob/main/configs/tqdm/tqdm_eva_vit-l_1e-4_20k-c2b-512.py) |[download link](https://drive.google.com/file/d/1_FXNthSshuvGraEX-2JxQWsGvtpeG9A7/view?usp=drive_link)|
+## Repository Layout
 
-## Datasets
-- To set up datasets, please follow [the official **TLDR** repo](https://github.com/ssssshwan/TLDR/tree/main?tab=readme-ov-file#setup-datasets).
-- After downloading the datasets, edit the data folder root in [the dataset config files](https://github.com/ByeongHyunPak/tqdm/tree/main/configs/_base_/datasets) following your environment.
-  
-  ```python
-  src_dataset_dict = dict(..., data_root='[YOUR_DATA_FOLDER_ROOT]', ...)
-  tgt_dataset_dict = dict(..., data_root='[YOUR_DATA_FOLDER_ROOT]', ...)
-  ```
-## Train
- ```
- bash dist_train.sh configs/[TRAIN_CONFIG] [NUM_GPUs]
+- `configs/`: Experiment configurations; `configs/tdos/*.py` cover CLIP ViT-B and ResNet backbones across multiple datasets.
+- `models/`: Custom segmentor (`TextDrivenOODSeg`) plus CLIP backbones and utilities.
+- `mmseg/`: Forked MMSegmentation modules (datasets, runners, layers) required by the new model.
+- `pretrained/`: Expected location for CLIP checkpoints (e.g., `CLIP-ViT-B-16.pt`, `RN50.pt`).
+- `tools/`: Launcher utilities adapted from MMSegmentation (dataset converters, distributed runners, etc.).
+- `train.py`: Entry point for single-node training that wires together config, datasets, and logging.
+- `dist_train.sh` : Helper scripts for multi-GPU training via PyTorch distributed.
+
+
+## Environment Setup
+
+1. **Create a Python environment** (CUDA 11.x + PyTorch ≥ 2.0 recommended):
+   ```bash
+   conda create -n tdos python=3.9
+   conda activate tdos
+   ```
+2. **Install PyTorch** built for your CUDA toolkit:
+   ```bash
+   pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+   ```
+3. **Install project dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Place CLIP checkpoints** under `pretrained/`:
+   - `CLIP-ViT-B-16.pt` for ViT backbones.
+   - `RN50.pt` for ResNet backbones.
+   Use filenames that match the `pretrained` entries in the chosen config.
+
+## Dataset Preparation
+
+The configs assume Cityscapes as the in-distribution dataset, with several OOD benchmarks for evaluation:
+
+- **Fishyscapes (Lost & Found / Static)**  
+- **Segment-Me-If-You-Can (Anomaly Track / Obstacle Track)**  
+- **Road Anomaly**  
+
+Update the dataset roots inside the base configs before training:
+
+- `configs/_base_/datasets/city2city-512.py`
+- `configs/_base_/datasets/city2fishy_*.py`
+- `configs/_base_/datasets/city2road_anomaly*.py`
+
+Each config defines a `data_root` pointing to the author’s environment (e.g., `/home/jovyan/...`). Replace these with your local paths for `img_dir` and `ann_dir`.
+
+## Training
+
+### Single-node / Single-GPU
+
+```bash
+python train.py configs/tdos/text_driven_ood_seg_vit-b_1e-5_20k-c2c-512.py \
+    --work-dir ./work_dirs/tdos_vit_b_cityscapes
 ```
-  - `[TRAIN_CONFIG]`: train configuration (e.g., `tqdm/tqdm_eve_vit-l_1e-5_20k-g2c-512.py`)
-  - `[NUM_GPUs]`: the number of the GPUs
-## Test
+
+- Logs and checkpoints are saved in `work_dirs/<config_name>/`.
+- Use `--load-from` to warm-start from a checkpoint, or `--resume-from` to continue training.
+- `--finetune` switches the model to eval mode before training the decoder/prompt heads only.
+
+### Multi-GPU (Distributed)
+
+```bash
+bash dist_train.sh configs/tdos/text_driven_ood_seg_vit-b_1e-5_20k-c2fishy_LnF-512.py 4 \
+    --work-dir ./work_dirs/tdos_vit_b_fishyscapes
 ```
-bash dist_test.sh configs/[TEST_CONFIG] work_dirs/[MODEL] [NUM_GPUs] --eval mIoU
+
+`dist_train.sh` forwards any extra arguments to `train.py`. Ensure that `CUDA_VISIBLE_DEVICES` is set before launching if you need a subset of GPUs.
+
+### Hyperparameters
+
+- Optimizer: `AdamW` with per-module LR multipliers (backbone/text encoder frozen by default).
+- Prompt length: controlled via `context_length` in the config and dynamically extended in `TextDrivenOODSeg`.
+- `learnable_cls_num` (default 50) determines the number of negative prompt slots appended to the decoder queries.
+
+Adjust these in the config or the segmentor as required for new datasets.
+
+## Evaluation & Inference
+
+Evaluate checkpoints using the matching config:
+
+```bash
+bash dist_test.sh configs/tdos/text_driven_ood_seg_vit-b_1e-5_20k-c2road_anomaly-512.py \
+    PRETRAINED_CHECKPOINT.pth 4 --eval mIoU
 ```
-  - `[TRAIN_CONFIG]`: test configuration (e.g., `tqdm/tqdm_eve_vit-l_1e-5_20k-g2b-512.py`)
-  - `[MODEL]`: model checkpoint (e.g., `tqdm_eve_vit-l_1e-5_20k-g2c-512/epoch_last.pth`)
-  - `[NUM_GPUs]`: the number of the GPUs
- 
-## The Most Relevant Files
-- [configs/tqdm/*](https://github.com/ByeongHyunPak/tqdm/tree/main/configs/tqdm) - Config files for the final tqdm
-- [models/segmentors/*](https://github.com/ByeongHyunPak/tqdm/tree/main/models/segmentors) - Overall tqdm framework
-- [mmseg/models/utils/assigner.py](https://github.com/ByeongHyunPak/tqdm/blob/main/mmseg/models/utils/assigner.py#L168) - Implementation of fixed matching
-- [mmseg/models/decode_heads/tqdm_head.py](https://github.com/ByeongHyunPak/tqdm/blob/main/mmseg/models/decode_heads/tqdm_head.py) - Our textual object query-based segmentation head
-- [mmseg/models/plugins/tqdm_msdeformattn_pixel_decoder.py](https://github.com/ByeongHyunPak/tqdm/blob/main/mmseg/models/plugins/tqdm_msdeformattn_pixel_decoder.py) - Our pixel decoder with *text-to-pixel attention*
+
+To visualize predictions, adapt `tools/test.py` with `--show-dir` or add custom hooks inside `train.py`.
 
 ## Citation
-If you find our code helpful, please cite our paper:
-```bibtex
-@article{pak2024textual,
-  title     = {Textual Query-Driven Mask Transformer for Domain Generalized Segmentation},
-  author    = {Pak, Byeonghyun and Woo, Byeongju and Kim, Sunghwan and Kim, Dae-hwan and Kim, Hoseong},
-  journal   = {arXiv preprint arXiv:2407.09033},
+
+If you build upon this work, please cite the project:
+
+```
+@inproceedings{song2024tdos,
+  title     = {Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation},
+  author    = {Seungheon Song and Jaekoo Lee},
+  booktitle = {Proceedings of the Kookmin University Autonomous Systems Symposium},
   year      = {2024}
 }
 ```
 
 ## Acknowledgements
-This project is based on the following open-source projects.
-We thank the authors for sharing their codes.
-- [MMSegmentation](https://github.com/open-mmlab/mmsegmentation)
-- [DAFormer](https://github.com/lhoyer/DAFormer)
-- [TLDR](https://github.com/ssssshwan/TLDR)
+
+Built on top of [CLIP](https://github.com/openai/CLIP) and [MMSegmentation](https://github.com/open-mmlab/mmsegmentation). Please refer to their licenses and cite them as appropriate for your research.

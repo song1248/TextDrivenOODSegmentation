@@ -86,7 +86,7 @@ class DistEvalHook(_DistEvalHook):
             tmpdir = osp.join(runner.work_dir, '.eval_hook')
 
         from mmseg.apis import multi_gpu_test
-        results = multi_gpu_test(
+        results, results_logits = multi_gpu_test(
             runner.model,
             self.dataloader,
             tmpdir=tmpdir,

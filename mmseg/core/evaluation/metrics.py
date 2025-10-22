@@ -418,7 +418,11 @@ def pre_eval_to_metrics(pre_eval_results,
     # convert list of tuples to tuple of lists, e.g.
     # [(A_1, B_1, C_1, D_1), ...,  (A_n, B_n, C_n, D_n)] to
     # ([A_1, ..., A_n], ..., [D_1, ..., D_n])
+    print("len(pre_eval_results)",len(pre_eval_results))
+    # print("pre_eval_results1", pre_eval_results)
     pre_eval_results = tuple(zip(*pre_eval_results))
+    # print("pre_eval_results2", pre_eval_results)
+    print("len(pre_eval_results)",len(pre_eval_results))
     assert len(pre_eval_results) == 4
 
     total_area_intersect = sum(pre_eval_results[0])
@@ -491,11 +495,17 @@ def total_area_to_metrics(total_area_intersect,
             ret_metrics['Fscore'] = f_value
             ret_metrics['Precision'] = precision
             ret_metrics['Recall'] = recall
-
+    # origin
+    # ret_metrics = {
+    #     metric: value.numpy()
+    #     for metric, value in ret_metrics.items()
+    # }
+    #$#$#$#$#$ start
     ret_metrics = {
         metric: value.numpy()
         for metric, value in ret_metrics.items()
     }
+    #$#$#$#$#$ end
     if nan_to_num is not None:
         ret_metrics = OrderedDict({
             metric: np.nan_to_num(metric_value, nan=nan_to_num)
