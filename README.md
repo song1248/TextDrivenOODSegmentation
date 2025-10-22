@@ -104,11 +104,11 @@ To visualize predictions, adapt `tools/test.py` with `--show-dir` or add custom 
 If you build upon this work, please cite the project:
 
 ```
-@inproceedings{song2024tdos,
+@inproceedings{song2025tdos,
   title     = {Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation},
   author    = {Seungheon Song and Jaekoo Lee},
-  booktitle = {Proceedings of the Kookmin University Autonomous Systems Symposium},
-  year      = {2024}
+  booktitle = {Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  year      = {2025}
 }
 ```
 
