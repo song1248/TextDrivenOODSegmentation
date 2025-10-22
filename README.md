@@ -1,6 +1,6 @@
 # TDOS: Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation
 
-This repository accompanies the project **“Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation”**, which introduces a text-aware framework for out-of-distribution (OOD) semantic segmentation in autonomous driving scenarios. The codebase extends the [MMSegmentation](https://github.com/open-mmlab/mmsegmentation) ecosystem with CLIP-based visual and textual reasoning to detect unseen road anomalies more reliably.
+This repository accompanies the project **“Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation”**, which introduces a text-aware framework for out-of-distribution (OOD) semantic segmentation in autonomous driving scenarios.
 
 ## Overview
 
@@ -79,25 +79,6 @@ bash dist_train.sh configs/tdos/text_driven_ood_seg_vit-b_1e-5_20k-c2fishy_LnF-5
 ```
 
 `dist_train.sh` forwards any extra arguments to `train.py`. Ensure that `CUDA_VISIBLE_DEVICES` is set before launching if you need a subset of GPUs.
-
-### Hyperparameters
-
-- Optimizer: `AdamW` with per-module LR multipliers (backbone/text encoder frozen by default).
-- Prompt length: controlled via `context_length` in the config and dynamically extended in `TextDrivenOODSeg`.
-- `learnable_cls_num` (default 50) determines the number of negative prompt slots appended to the decoder queries.
-
-Adjust these in the config or the segmentor as required for new datasets.
-
-## Evaluation & Inference
-
-Evaluate checkpoints using the matching config:
-
-```bash
-bash dist_test.sh configs/tdos/text_driven_ood_seg_vit-b_1e-5_20k-c2road_anomaly-512.py \
-    PRETRAINED_CHECKPOINT.pth 4 --eval mIoU
-```
-
-To visualize predictions, adapt `tools/test.py` with `--show-dir` or add custom hooks inside `train.py`.
 
 ## Citation
 
