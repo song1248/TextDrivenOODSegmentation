@@ -1,4 +1,5 @@
 # TDOS: Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation
+[📄 Paper on arXiv (2025)](https://arxiv.org/abs/2511.07238)
 
 This repository accompanies the project **“Leveraging Text-Driven Semantic Variation for Robust OOD Segmentation”**, which introduces a text-aware framework for out-of-distribution (OOD) semantic segmentation in autonomous driving scenarios.
 
